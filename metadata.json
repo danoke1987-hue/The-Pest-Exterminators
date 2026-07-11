@@ -1,0 +1,6 @@
+{
+  "name": "The Pest Exterminators",
+  "description": "Premium professional 24/7 pest control services across London and surrounding areas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
