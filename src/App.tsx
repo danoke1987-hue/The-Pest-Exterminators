@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import { StickyMobileActions } from './components/NavigationElements';
 import CookieConsent from './components/CookieConsent';
 import { ErrorBoundary } from './components/States';
+import { useSEO } from './hooks/useSEO';
 
 // Page Components
 import Home from './pages/Home';
@@ -15,6 +16,9 @@ import ContentHub from './pages/ContentHub';
 
 export default function App() {
   const { path } = useRouter();
+  
+  // Dynamically manage title, meta description, and social graph tags for the active route
+  useSEO();
 
   // Helper to parse path segments
   const segments = path.toLowerCase().split('/').filter(Boolean);
