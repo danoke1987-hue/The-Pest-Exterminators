@@ -6,6 +6,7 @@ import { StickyMobileActions } from './components/NavigationElements';
 import CookieConsent from './components/CookieConsent';
 import { ErrorBoundary } from './components/States';
 import { useSEO } from './hooks/useSEO';
+import { Analytics } from '@vercel/analytics/react';
 
 // Page Components
 import Home from './pages/Home';
@@ -114,6 +115,7 @@ export default function App() {
         <Footer />
         <StickyMobileActions />
         <CookieConsent />
+        <Analytics />
       </div>
     </ErrorBoundary>
   );
