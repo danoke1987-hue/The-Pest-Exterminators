@@ -10,6 +10,7 @@ export interface UseSeoOptions {
   ogType?: string;
   ogImage?: string;
   canonicalPath?: string;
+  schema?: object;
 }
 
 export function useSEO(options: UseSeoOptions = {}) {
@@ -23,6 +24,8 @@ export function useSEO(options: UseSeoOptions = {}) {
   const description = options.description || seoData.description;
   const isIndexable = options.noindex !== undefined ? !options.noindex : seoData.indexable;
   const ogType = options.ogType || 'website';
+  const seoSchema = options.schema || seoData.schema;
+  const stringifiedSchema = seoSchema ? JSON.stringify(seoSchema) : '';
   
   // Default fallback image if none provided
   const defaultImage = 'https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&q=80&w=800';
@@ -90,5 +93,21 @@ export function useSEO(options: UseSeoOptions = {}) {
     // 5. Canonical Link
     setLinkTag('canonical', { href: canonicalUrl });
 
-  }, [title, description, isIndexable, ogType, ogImage, canonicalUrl]);
+    // 6. JSON-LD Structured Data
+    const existingSchemaTag = document.getElementById('jsonld-schema');
+    if (stringifiedSchema) {
+      if (existingSchemaTag) {
+        existingSchemaTag.textContent = stringifiedSchema;
+      } else {
+        const schemaScript = document.createElement('script');
+        schemaScript.id = 'jsonld-schema';
+        schemaScript.type = 'application/ld+json';
+        schemaScript.textContent = stringifiedSchema;
+        document.head.appendChild(schemaScript);
+      }
+    } else if (existingSchemaTag) {
+      existingSchemaTag.remove();
+    }
+
+  }, [title, description, isIndexable, ogType, ogImage, canonicalUrl, stringifiedSchema]);
 }

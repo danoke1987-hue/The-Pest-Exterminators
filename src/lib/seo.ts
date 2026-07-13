@@ -5,6 +5,7 @@ import { boroughsBySlug } from '../data/boroughs';
 import { areasBySlug } from '../data/areas';
 import { postcodePrefixesByPrefix, postcodeDistrictsByDistrict } from '../data/postcodes';
 import { articlesBySlug } from '../data/articles';
+import { faqsData } from '../data/faqs';
 
 interface SeoData {
   title: string;
@@ -108,10 +109,26 @@ export function getSeoData(path: string): SeoData {
       const slug = segments[1];
       const pest = pestsBySlug[slug];
       if (pest) {
+        let faqSchema = undefined;
+        if (pest.FAQs && pest.FAQs.length > 0) {
+          faqSchema = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": pest.FAQs.map((faq) => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          };
+        }
         return {
           title: `${pest.name} Eradication & Treatment London | The Pest Exterminators`,
           description: pest.shortDescription,
-          indexable: true
+          indexable: true,
+          schema: faqSchema
         };
       }
     }
@@ -240,10 +257,23 @@ export function getSeoData(path: string): SeoData {
   }
 
   if (segments[0] === 'faq') {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqsData.map((faq) => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    };
     return {
       title: "Pest Eradication & Safety Frequently Asked Questions | FAQ",
       description: "Instant professional answers to questions regarding treatment safety for children/pets, eradication guarantees, and service charges.",
-      indexable: true
+      indexable: true,
+      schema: faqSchema
     };
   }
 
