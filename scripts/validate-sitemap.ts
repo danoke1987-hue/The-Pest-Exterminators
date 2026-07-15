@@ -1,5 +1,7 @@
 import { generateSitemapXml } from '../src/lib/sitemap';
 import { businessDetails } from '../src/data/business';
+import fs from 'fs';
+import path from 'path';
 
 async function runValidation() {
   console.log('=== STARTING AUTOMATED SITEMAP AUDIT ===\n');
@@ -151,6 +153,17 @@ async function runValidation() {
     console.log('✗ SITEMAP AUDIT FAILED. Please review the errors listed above.');
     process.exit(1);
   } else {
+    try {
+      const publicDir = path.resolve(process.cwd(), 'public');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemapXml, 'utf8');
+      fs.writeFileSync(path.resolve(process.cwd(), 'sitemap.xml'), sitemapXml, 'utf8');
+      console.log('✓ Successfully wrote sitemap.xml to public/sitemap.xml and root.');
+    } catch (writeErr) {
+      console.error('✗ Failed to write sitemap.xml to disk:', writeErr);
+    }
     console.log('✓ SITEMAP AUDIT PASSED successfully! The sitemap conforms 100% to Google Search Console specs.');
     process.exit(0);
   }
