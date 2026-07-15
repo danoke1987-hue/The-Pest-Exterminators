@@ -7,7 +7,10 @@ import { postcodePrefixesData, postcodeDistrictsData } from '../data/postcodes';
 import { articlesData } from '../data/articles';
 
 export function generateSitemapXml(): string {
-  const baseUrl = businessDetails.domain.replace(/\/+$/, '');
+  const domain = businessDetails.domain.startsWith('http') 
+    ? businessDetails.domain 
+    : `https://${businessDetails.domain}`;
+  const baseUrl = domain.replace(/\/+$/, '');
   const urls: string[] = [];
 
   // 1. Static Pages

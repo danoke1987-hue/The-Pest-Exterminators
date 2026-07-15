@@ -81,12 +81,16 @@ async function createServer() {
 
   // 2. ROBOTS.TXT
   app.get('/robots.txt', (req, res) => {
+    const domain = businessDetails.domain.startsWith('http') 
+      ? businessDetails.domain 
+      : `https://${businessDetails.domain}`;
+    const cleanDomain = domain.replace(/\/+$/, '');
     res.type('text/plain');
-    res.send(`User-agent: *\nAllow: /\nSitemap: ${businessDetails.domain.replace(/\/+$/, '')}/sitemap.xml\n`);
+    res.send(`User-agent: *\nAllow: /\nSitemap: ${cleanDomain}/sitemap.xml\n`);
   });
 
-  // 3. SITEMAP.XML
-  app.get('/sitemap.xml', (req, res) => {
+  // 3. SITEMAP.XML / SITEMAP/XML
+  app.get(['/sitemap.xml', '/sitemap/xml'], (req, res) => {
     try {
       const sitemap = generateSitemapXml();
       res.type('application/xml');
@@ -138,7 +142,11 @@ async function createServer() {
 
       // Fetch dynamic SEO credentials
       const seo = getSeoData(url);
-      const canonicalUrl = `${businessDetails.domain.replace(/\/+$/, '')}${url}`;
+      const domain = businessDetails.domain.startsWith('http') 
+        ? businessDetails.domain 
+        : `https://${businessDetails.domain}`;
+      const cleanDomain = domain.replace(/\/+$/, '');
+      const canonicalUrl = `${cleanDomain}${url}`;
 
       // Construct dynamic head tags
       let headTags = `
