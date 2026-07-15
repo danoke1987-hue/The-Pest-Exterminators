@@ -37,8 +37,14 @@ export function useSEO(options: UseSeoOptions = {}) {
     : `https://${businessDetails.domain}`;
   const cleanDomain = domain.replace(/\/+$/, '');
   const targetPath = options.canonicalPath || path;
-  const cleanPath = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
-  const canonicalUrl = `${cleanDomain}${cleanPath}`;
+  let cleanPath = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
+  
+  // Strip query parameters
+  let [pathPart] = cleanPath.split('?');
+  if (pathPart !== '/' && !pathPart.endsWith('/') && !pathPart.includes('.')) {
+    pathPart += '/';
+  }
+  const canonicalUrl = `${cleanDomain}${pathPart}`;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

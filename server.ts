@@ -22,6 +22,31 @@ async function createServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
+  // Redirect non-www to www (canonical hostname) in production
+  app.use((req, res, next) => {
+    const host = req.headers.host || '';
+    if (host === 'thepestexterminators.co.uk') {
+      return res.redirect(301, `https://www.thepestexterminators.co.uk${req.originalUrl}`);
+    }
+    next();
+  });
+
+  // Redirect GET requests without trailing slash to trailing slash (except files and API routes)
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    
+    const pathname = req.path;
+    // Skip homepage, API routes, and static files containing a dot
+    if (pathname === '/' || pathname.startsWith('/api/') || pathname.includes('.')) {
+      return next();
+    }
+
+    if (!pathname.endsWith('/')) {
+      return res.redirect(301, `${pathname}/${req.url.slice(pathname.length)}`);
+    }
+    next();
+  });
+
   // 1. SYSTEM API ROUTES
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' });
@@ -89,12 +114,16 @@ async function createServer() {
     res.send(`User-agent: *\nAllow: /\nSitemap: ${cleanDomain}/sitemap.xml\n`);
   });
 
-  // 3. SITEMAP.XML / SITEMAP/XML
-  app.get(['/sitemap.xml', '/sitemap/xml'], (req, res) => {
+  // 3. SITEMAP ENDPOINTS
+  app.get('/sitemap/xml', (req, res) => {
+    res.redirect(301, '/sitemap.xml');
+  });
+
+  app.get('/sitemap.xml', (req, res) => {
     try {
       const sitemap = generateSitemapXml();
-      res.type('application/xml');
-      res.send(sitemap);
+      res.set('Content-Type', 'application/xml; charset=utf-8');
+      res.status(200).send(sitemap);
     } catch (err: any) {
       console.error('Sitemap generation error:', err);
       res.status(500).send('Error compiling sitemap');
@@ -146,7 +175,12 @@ async function createServer() {
         ? businessDetails.domain 
         : `https://${businessDetails.domain}`;
       const cleanDomain = domain.replace(/\/+$/, '');
-      const canonicalUrl = `${cleanDomain}${url}`;
+      
+      let [pathPart] = url.split('?');
+      if (pathPart !== '/' && !pathPart.endsWith('/') && !pathPart.includes('.')) {
+        pathPart += '/';
+      }
+      const canonicalUrl = `${cleanDomain}${pathPart}`;
 
       // Construct dynamic head tags
       let headTags = `

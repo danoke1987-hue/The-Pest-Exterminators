@@ -77,15 +77,37 @@ export function generateSitemapXml(): string {
     urls.push(`${baseUrl}/advice/${art.slug}/`);
   });
 
+  // Deduplicate and ensure no invalid trailing slash duplicates
+  const uniqueUrls = Array.from(new Set(urls));
+
   // Compile XML
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-  urls.forEach((url) => {
+  uniqueUrls.forEach((url) => {
+    // Escape XML special characters
+    const escapedUrl = url
+      .replace(/&/g, '&amp;')
+      .replace(/'/g, '&apos;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
     xml += '  <url>\n';
-    xml += `    <loc>${url}</loc>\n`;
-    xml += '    <changefreq>weekly</changefreq>\n';
-    xml += '    <priority>0.8</priority>\n';
+    xml += `    <loc>${escapedUrl}</loc>\n`;
+    
+    // Check if it is an article and has lastReviewed or publishedDate
+    if (url.includes('/advice/')) {
+      const slug = url.split('/').filter(Boolean).pop();
+      const article = articlesData.find(a => a.slug === slug);
+      if (article) {
+        const dateStr = article.lastReviewed || article.publishedDate;
+        if (dateStr) {
+          xml += `    <lastmod>${dateStr}</lastmod>\n`;
+        }
+      }
+    }
+    
     xml += '  </url>\n';
   });
 
