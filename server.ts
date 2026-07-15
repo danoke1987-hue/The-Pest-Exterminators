@@ -22,6 +22,24 @@ async function createServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
+  // Recover from browser-cached 301 trailing slash redirects on static assets/files
+  app.use((req, res, next) => {
+    const pathname = req.path;
+    if (pathname.endsWith('/')) {
+      const hasExtension = /\.[a-zA-Z0-9]+(?=\/$)/.test(pathname);
+      const isInternal = pathname.includes('/node_modules/') || 
+                         pathname.includes('/@vite/') || 
+                         pathname.includes('/@fs/') || 
+                         pathname.includes('/@id/');
+      if (hasExtension || isInternal) {
+        const cleanPath = pathname.slice(0, -1);
+        const queryString = req.url.slice(req.path.length);
+        req.url = `${cleanPath}${queryString}`;
+      }
+    }
+    next();
+  });
+
   // Redirect non-www to www (canonical hostname) in production
   app.use((req, res, next) => {
     const host = req.headers.host || '';
@@ -31,21 +49,29 @@ async function createServer() {
     next();
   });
 
-  // Redirect GET requests without trailing slash to trailing slash (except files and API routes)
-  app.use((req, res, next) => {
-    if (req.method !== 'GET') return next();
-    
-    const pathname = req.path;
-    // Skip homepage, API routes, and static files containing a dot
-    if (pathname === '/' || pathname.startsWith('/api/') || pathname.includes('.')) {
-      return next();
-    }
+  // Redirect GET requests without trailing slash to trailing slash (except files and API routes) - Production only
+  if (isProd) {
+    app.use((req, res, next) => {
+      if (req.method !== 'GET') return next();
+      
+      const pathname = req.path;
+      // Skip homepage, API routes, Vite internals, node_modules, and static files containing a dot
+      if (
+        pathname === '/' ||
+        pathname.startsWith('/api/') ||
+        pathname.startsWith('/@') ||
+        pathname.startsWith('/node_modules/') ||
+        pathname.includes('.')
+      ) {
+        return next();
+      }
 
-    if (!pathname.endsWith('/')) {
-      return res.redirect(301, `${pathname}/${req.url.slice(pathname.length)}`);
-    }
-    next();
-  });
+      if (!pathname.endsWith('/')) {
+        return res.redirect(301, `${pathname}/${req.url.slice(pathname.length)}`);
+      }
+      next();
+    });
+  }
 
   // 1. SYSTEM API ROUTES
   app.get('/api/health', (req, res) => {
